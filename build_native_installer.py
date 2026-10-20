@@ -33,6 +33,8 @@ def main():
     original=digest(APP/'Contents/Resources/app.asar')
     candidate=digest(STAGE/'Contents/Resources/app.asar')
     candidate_report=json.loads((BASE/'candidate-v2/report.json').read_text())
+    project_version=json.loads((BASE/'package.json').read_text())['version']
+    is_upgrade=candidate_report.get('upgradeFrom') in ('0.1.0', '0.1.2')
     workspace_description=html.escape('、'.join(candidate_report['roots']))
     build_id=datetime.now(ZoneInfo('Asia/Shanghai')).strftime('%Y%m%d-%H%M%S')
     store='/Library/Application Support/CodexFinderMenu/'+build_id
@@ -89,7 +91,7 @@ task_restore() {
   /usr/bin/ditto "$TASK_STORE/Original.app" "$TASK_APP"
   /usr/bin/codesign --verify --deep --strict "$TASK_APP"
   echo 'restored-original' > "$TASK_STORE/status.txt"
-  echo '安装或启动检查失败，已恢复原厂应用及签名。'
+  echo '安装或启动检查失败，已恢复安装前的应用及其签名。'
   task_open || true
   exit 1
 }
@@ -126,10 +128,10 @@ echo '补丁已安装，签名及完整文件哈希通过，Codex 已重新打�
     values[0].update(BundleIsRelocatable=False,BundleIsVersionChecked=False,BundleHasStrictIdentifier=True,BundleOverwriteAction='upgrade')
     components.write_bytes(plistlib.dumps(values))
     identifier='local.codex-finder-menu.native'
-    run('/usr/bin/pkgbuild','--root',payload,'--component-plist',components,'--scripts',scripts,'--identifier',identifier,'--version','0.1.0','--install-location','/Applications','--ownership','preserve',WORK/'CodexFinderMenu-component.pkg')
+    run('/usr/bin/pkgbuild','--root',payload,'--component-plist',components,'--scripts',scripts,'--identifier',identifier,'--version',project_version,'--install-location','/Applications','--ownership','preserve',WORK/'CodexFinderMenu-component.pkg')
     resources=WORK/'resources';resources.mkdir(exist_ok=True)
-    (resources/'welcome.html').write_text('''<html><meta charset="utf-8"><body><h2>Codex 原生文件树增强（非官方）</h2><p>先保持此安装窗口打开，用 ⌘Q 正常退出 Codex，再返回本窗口继续安装。系统安装器会请求 macOS 管理员授权。</p><p>安装后会尝试自动重新打开；请勿手动提前启动。</p><p>此包固定适配 26.1013.40934，允许的工作区：@WORKSPACES@。</p><p><strong>已知影响：</strong>改用本地签名、移除原厂专属权限，并为应用及 Electron helpers 设置库验证例外；部分 Codex 内置工具已确认会被拒绝连接，钥匙串、通知、更新也可能受影响。首版不是完整 Finder。</p><p>安装前会验证原厂版本并保存完整备份。签名或启动检查失败时，会在应用已停止的条件下尝试恢复原版；不会关闭系统 Gatekeeper、SIP 或强制结束应用。</p></body></html>'''.replace('@WORKSPACES@', workspace_description))
-    (resources/'conclusion.html').write_text('''<html><meta charset="utf-8"><body><h2>安装完成</h2><p>Codex 应已重新打开。请在原生文件树里对临时文件右键，验收重命名、新建、复制和移到废纸篓等功能。</p><p>快捷键：Return 重命名，⌘⌫ 移到废纸篓，⌘C/⌘V 复制粘贴，⌘D 复制副本，⇧⌘N 新建文件夹。⌃⌘E 切换文件树。</p><p>原厂备份由管理员保护，位于 /Library/Application Support/CodexFinderMenu。用户目录下原有备份也继续保留。</p></body></html>''')
+    (resources/'welcome.html').write_text('''<html><meta charset="utf-8"><body><h2>Codex 原生文件树增强（非官方）</h2><p><strong>v0.1.4：文件树选中文件或在文本预览中选中文字后按 ⌘U，添加到当前对话；文件树支持多选及文件夹引用，文字选区排除聊天输入框。</strong></p><p>先保持此安装窗口打开，用 ⌘Q 正常退出 Codex，再返回本窗口继续安装。系统安装器会请求 macOS 管理员授权。</p><p>安装后会尝试自动重新打开；请勿手动提前启动。</p><p>此包固定适配 26.1013.40934，允许的工作区：@WORKSPACES@。</p><p><strong>已知影响：</strong>使用本地签名、应用及 Electron helpers 的库验证例外；部分 Codex 内置工具已确认会被拒绝连接，钥匙串、通知、更新也可能受影响。首版不是完整 Finder。</p><p>安装前会验证当前版本并保存完整备份；若已安装补丁，备份是升级前的补丁版本，并非原厂版本。失败时在应用已停止的条件下尝试恢复安装前版本；不会关闭系统 Gatekeeper、SIP 或强制结束应用。</p></body></html>'''.replace('@WORKSPACES@', workspace_description))
+    (resources/'conclusion.html').write_text('''<html><meta charset="utf-8"><body><h2>安装完成</h2><p>Codex 应已重新打开。文件树选中文件或在文本预览中选中文字后按 ⌘U，验收添加到当前对话。文件树支持多选及文件夹引用，文字选区排除聊天输入框。</p><p>路径快捷键：⌥⌘C 拷贝绝对路径，⇧⌥⌘C 拷贝相对工作区根目录的路径。其他快捷键：Return 重命名，⌘⌫ 移到废纸篓，⌘C/⌘V 复制粘贴，⌘D 复制副本，⇧⌘N 新建文件夹。⌃⌘E 切换文件树。</p><p>安装前版本的备份由管理员保护，位于 /Library/Application Support/CodexFinderMenu；若本次是升级，备份为升级前的补丁版本。用户目录下原有原厂备份也继续保留。</p></body></html>''')
     distribution=WORK/'distribution.xml'
     distribution.write_text(f'''<?xml version="1.0" encoding="utf-8"?>
 <installer-gui-script minSpecVersion="2">
@@ -138,9 +140,9 @@ echo '补丁已安装，签名及完整文件哈希通过，Codex 已重新打�
 <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
 <choices-outline><line choice="default"><line choice="payload"/></line></choices-outline>
 <choice id="default"/><choice id="payload" visible="false"><pkg-ref id="{identifier}"/></choice>
-<pkg-ref id="{identifier}" version="0.1.0" auth="Root">CodexFinderMenu-component.pkg</pkg-ref>
+<pkg-ref id="{identifier}" version="{project_version}" auth="Root">CodexFinderMenu-component.pkg</pkg-ref>
 </installer-gui-script>''')
-    output=BASE/'Codex原生文件树增强.pkg'
+    output=BASE/('Codex文件与文字选区-CmdU修复-v0.1.4.pkg' if is_upgrade else 'Codex原生文件树增强.pkg')
     run('/usr/bin/productbuild','--distribution',distribution,'--package-path',WORK,'--resources',resources,output)
     (WORK/'build-report.json').write_text(json.dumps({'package':str(output),'originalFullAsarSHA256':original,'candidateFullAsarSHA256':candidate,'candidateCodeHash':codehash,'rootBackup':store+'/Original.app','builtAt':build_id},indent=2)+'\n')
     print('BUILT:',output)

@@ -20,11 +20,14 @@
 
 | 操作 | 文件树内快捷键 |
 | --- | --- |
+| 添加选中文件或目录引用到当前对话（支持多选） | ⌘U |
+| 文本预览选区添加到对话（原生浮动按钮可用时） | ⌘U |
 | 默认应用打开 / 快速预览 | ⌘O / 空格 |
 | 文件简介（补丁对话框） | ⌘I |
 | 拷贝 / 粘贴实际文件 | ⌘C / ⌘V |
 | 将拷贝的项目移到此处 | ⌥⌘V |
-| 拷贝路径 | ⌥⌘C |
+| 拷贝绝对路径 | ⌥⌘C |
+| 拷贝相对工作区根目录的路径 | ⇧⌥⌘C |
 | 复制副本 | ⌘D |
 | 重命名 | Return |
 | 新建文件夹 / 文件 | ⇧⌘N / ⌥⇧⌘N |
@@ -41,6 +44,7 @@
 | 文件 | 职责 |
 | --- | --- |
 | `src/renderer.js` | 原菜单增强、文件树局部快捷键、提示与对话框 |
+| `src/selection.js` | 原生选区浮动按钮生命周期内的 ⌘U，复用原回调 |
 | `src/preload.js` | 专用 IPC bridge |
 | `src/main.cjs` | IPC 主框架校验、串行调度、确认、系统调用与撤销 |
 | `src/files.cjs` | 允许目录、冲突与符号链接校验 |
@@ -91,6 +95,8 @@ python3 patch.py prepare --app "$TASK_APP" --root "$TASK_WORKSPACE" --output ./c
 
 `prepare` 的输出目录必须尚不存在，可重复 `--root` 加入多个明确允许的工作区。`settings.json` 在候选 ASAR 内生成，不能仅修改桌面 profile 来改变允许范围。测试不需要 npm 第三方依赖；原生测试会操作它自己创建的临时文件及其废纸篓项目。
 
+已经安装已知 `v0.1.0` 或 `v0.1.2` 文件树补丁的同版本客户端，可用 `python3 patch.py upgrade --app "$TASK_APP" --root "$TASK_WORKSPACE" --output ./candidate-v2` 生成 `v0.1.4` 的文件与文字选区 ⌘U、路径快捷键更新候选。必须按原顺序列出原有全部允许目录；升级不会更改目录权限。它替换文件树模块、选区浮动按钮模块及快捷键 renderer，保留当前 main/preload 和 native helper。仍需复制客户端、同步摘要、重签、实测并通过系统安装器覆盖后才生效。
+
 ### 3. 准备独立副本并实测
 
 确认脚本已适配实际应用位置，且 `signing-preflight/ChatGPT.app` 尚不存在。下面只创建副本，不覆盖正式应用：
@@ -138,3 +144,11 @@ python3 build_native_installer.py
 源码 ZIP 采用明确白名单：源码、构建/测试脚本、测试、文档和清单。**不包含**官方客户端及框架、`.pkg`、原生编译产物、候选包、完整备份、账号/profile、运行日志、会话数据、本机收据、调试端口文件或历史授权记录。源码中仍有待适配的机器路径，见上面的检查列表；它们不是接收者机器的默认配置。
 
 运行 `python3 share_source.py` 可以重新生成 `dist/codex-finder-menu-source.zip`。包内 `MANIFEST.json` 记录每个交付文件的 SHA256；这是完整性清单，不是发布者数字签名。
+
+## v0.1.3 选区修复
+
+原生文件编辑器可能使用 contenteditable 或 Shadow DOM，原生 selectedText 也可能经过 trim/序列化。不要用 window.getSelection().toString() 的严格相等来判断原生选区是否有效，也不要把文件编辑器一律当成聊天输入框排除。快捷键绑定随原生选区浮动按钮挂载/卸载，调用该按钮已有的回调。只添加目录引用，不递归附加目录中的文件。独立副本测试包含 Chromium Input.dispatchKeyEvent 的真实输入分发、文件编辑节点与 Shadow DOM，但最终用户对话仍需安装后验收。
+
+## v0.1.4 路径快捷键
+
+文件树的 Finder 菜单提供 ⌥⌘C 绝对路径、⇧⌥⌘C 相对当前工作区根目录路径，支持文件夹和多选（每行一个路径）。根目录自身复制为 `.`。这是 Codex 文件树中的增强；不修改系统 Finder。Option 可能令 event.key 产生特殊字符，因此 Command 组合键使用 event.code 识别字母键。

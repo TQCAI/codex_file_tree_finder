@@ -9,14 +9,22 @@ FILES = [
     'AGENTS.md', 'README_FOR_AGENTS.md', '.gitignore', 'package.json',
     'patch.py', 'local_signing.py', 'install.py', 'install_after_quit.py',
     'smoke_startup.py', 'frontend_smoke.cjs', 'build_native_installer.py', 'share_source.py',
-    'src/files.cjs', 'src/main.cjs', 'src/native.swift', 'src/preload.js', 'src/renderer.js',
-    'tests/files.test.cjs', 'tests/ipc.test.cjs', 'tests/native.test.cjs', 'tests/renderer.test.cjs',
+    'src/files.cjs', 'src/main.cjs', 'src/native.swift', 'src/preload.js', 'src/renderer.js', 'src/selection.js',
+    'tests/files.test.cjs', 'tests/ipc.test.cjs', 'tests/native.test.cjs', 'tests/renderer.test.cjs', 'tests/selection.test.cjs',
 ]
 ENTRY = '''# Codex File Tree Finder
 
 为 macOS Codex 的**原生文件树**添加 Finder 式右键菜单和快捷键的实验性补丁。
 
 支持复制/粘贴文件、移动、复制副本、重命名、新建文件/文件夹、移到废纸篓、快速预览、Finder 定位、ZIP 压缩、标签，以及部分撤销操作。保留原菜单。
+
+`v0.1.4` 新增：**⌘⌥C 拷贝绝对路径，⌘⌥⇧C 拷贝相对工作区根目录的路径**；支持文件、文件夹、多选，并正确识别 macOS Option 组合键。
+
+`v0.1.3` 修复：文字选区快捷键支持文件编辑器的可编辑节点、空白归一化和 Shadow DOM，优先在窗口捕获阶段处理；文件树 ⌘U 及右键菜单也支持文件夹引用。
+
+`v0.1.2` 新增：文本预览中选中文字，按 **⌘U** 调用选区浮动按钮的原生“添加到对话”，保留原生上下文；仅在按钮可用时响应，排除输入框和编辑模式。
+
+`v0.1.1` 新增：文件树选中文件后按 **⌘U**，调用原生“添加到对话”；支持多选；v0.1.3 起也支持文件夹引用，跳过聊天输入框。需要安装更新后生效。
 
 **这是非官方、固定版本的客户端补丁，不是即装即用的官方插件。**目前仅针对 macOS Apple Silicon 上的 `26.1013.40934` 做过独立副本验证，其他版本与架构需要重新适配。首次使用请让你的 Codex agent 阅读 [接手与安装指南](README_FOR_AGENTS.md)。
 

@@ -37,11 +37,21 @@ function folder(ctx) {
   const directory = display && ctx.model?.getItem?.(display)?.isDirectory?.();
   return directory || ctx.directory ? ctx.path : ctx.path.slice(0, ctx.path.lastIndexOf('/'));
 }
+function relativePath(cwd, path) {
+  const base = cwd.split('/').filter(Boolean), target = path.split('/').filter(Boolean);
+  let common = 0;
+  while (common < base.length && common < target.length && base[common] === target[common]) common++;
+  return [...base.slice(common).map(() => '..'), ...target.slice(common)].join('/') || '.';
+}
 async function action(name, ctx) {
   if (!bridge() || (ctx.hostId != null && ctx.hostId !== 'local')) { notification('文件菜单补丁仅支持本机工作区', true); return; }
   if (busy) return;
   busy = true;
   try {
+    if (name === 'addToChat') {
+      for (const file of ctx.chatPaths) await ctx.addToChat(file);
+      return;
+    }
     const paths = targets(ctx);
     const request = { action: name, paths, directory: folder(ctx) };
     if (name === 'rename') {
@@ -57,8 +67,9 @@ async function action(name, ctx) {
       request.tags = await popup('设置标签', '', '用英文逗号分隔；将替换现有标签。留空清除标签。');
       if (request.tags == null) return;
     }
-    if (name === 'copyPath') {
-      await navigator.clipboard.writeText(paths.join('\n')); notification('已拷贝路径'); return;
+    if (name === 'copyPath' || name === 'copyRelativePath') {
+      const copied = name === 'copyPath' ? paths : paths.map(path => relativePath(ctx.cwd, path));
+      await navigator.clipboard.writeText(copied.join('\n')); notification(name === 'copyPath' ? '已拷贝绝对路径' : '已拷贝相对路径'); return;
     }
     if (name === 'movePaste') { request.action = 'paste'; request.move = true; }
     const result = await bridge().invoke(request);
@@ -72,7 +83,7 @@ const entries = [
   ['open', '打开', '⌘O'], ['reveal', '在 Finder 中显示', ''],
   ['quickLook', '快速预览', '空格'], ['info', '显示简介', '⌘I'],
   null, ['copy', '拷贝文件', '⌘C'], ['paste', '粘贴项目', '⌘V'],
-  ['movePaste', '将项目移到此处', '⌥⌘V'], ['copyPath', '拷贝路径名称', '⌥⌘C'],
+  ['movePaste', '将项目移到此处', '⌥⌘V'], ['copyPath', '拷贝绝对路径', '⌥⌘C'], ['copyRelativePath', '拷贝相对路径', '⇧⌥⌘C'],
   ['duplicate', '复制副本', '⌘D'], ['rename', '重命名', 'Return'],
   null, ['newFolder', '新建文件夹', '⇧⌘N'], ['newFile', '新建文件', '⌥⇧⌘N'],
   ['compress', '压缩为 ZIP', ''], ['tags', '设置标签…', ''],
@@ -80,7 +91,9 @@ const entries = [
 ];
 function menu(original, ctx) {
   if (!bridge() || (ctx.hostId != null && ctx.hostId !== 'local')) return original;
-  return [...original, { id: 'finder-separator', type: 'separator' }, ...entries.map((entry, index) => {
+  const labeled = original.map(item => item.id === 'add-to-chat' && item.message?.defaultMessage
+    ? { ...item, message: { ...item.message, id: 'local.codexFinder.addToChatShortcut', defaultMessage: '添加到对话    ⌘U' } } : item);
+  return [...labeled, { id: 'finder-separator', type: 'separator' }, ...entries.map((entry, index) => {
     if (!entry) return { id: `finder-separator-${index}`, type: 'separator' };
     const [name, label, keys] = entry;
     return { id: `finder-${name}`, message: { id: `local.codexFinder.${name}`, defaultMessage: keys ? `${label}    ${keys}` : label, description: 'Local Finder-style file action' }, onSelect: () => action(name, ctx) };
@@ -90,9 +103,20 @@ function key(event, ctx) {
   const native = event.nativeEvent || event;
   if (native.isComposing || native.defaultPrevented || !bridge() || (ctx.hostId != null && ctx.hostId !== 'local')) return;
   if (native.composedPath?.().some(el => el instanceof HTMLElement && (['INPUT','TEXTAREA'].includes(el.tagName) || el.isContentEditable))) return;
-  const k = event.key.toLowerCase(); const cmd = event.metaKey && !event.ctrlKey;
+  const cmd = event.metaKey && !event.ctrlKey;
+  // Option+C may report key='ç' on macOS. Use the physical key for command chords.
+  const k = cmd && /^Key[A-Z]$/.test(event.code || '') ? event.code.slice(3).toLowerCase() : event.key.toLowerCase();
+  if (cmd && !event.shiftKey && !event.altKey && k === 'u' && typeof ctx.addToChat === 'function') {
+    const selected = ctx.model?.getSelectedPaths?.() || [];
+    const paths = [...new Set(selected.map(p => ctx.resolve(p)).filter(Boolean))];
+    if (!paths.length) return;
+    event.preventDefault(); event.stopPropagation();
+    if (!native.repeat) action('addToChat', { ...ctx, chatPaths: paths });
+    return;
+  }
   let name;
   if (cmd && !event.shiftKey) name = ({ o: 'open', i: 'info', c: event.altKey ? 'copyPath' : 'copy', v: event.altKey ? 'movePaste' : 'paste', d: 'duplicate', z: 'undo', backspace: 'trash' })[k];
+  if (cmd && event.altKey && event.shiftKey && k === 'c') name = 'copyRelativePath';
   if (cmd && event.shiftKey && k === 'n') name = event.altKey ? 'newFile' : 'newFolder';
   if (!event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) name = k === 'enter' ? 'rename' : k === ' ' ? 'quickLook' : name;
   if (!name) return;
