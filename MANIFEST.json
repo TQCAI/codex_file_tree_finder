@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "purpose": "source-only Codex agent handoff",
+  "files": {
+    ".gitignore": "53466dca09ed38f94fb8e1920adbcea5df93e522b5af8396396edb1a21df16b0",
+    "AGENTS.md": "bdf8cdcc1f11330772ec6cc50629d25832286eb8f0807273a0b21aad31aaeeb8",
+    "README.md": "e0dfb374ee9f9f8a805de6abe898c40bca140889702c2131838f72ff597211d5",
+    "README_FOR_AGENTS.md": "c540bb97d79ebf3a995b6b8cb265543c4eca06073c6c204f6dd5884c6339682c",
+    "build_native_installer.py": "861ad041eba5ea5eab8187d8a8275efabc7115b7dc81d7a6a66efdbb8a4c5832",
+    "frontend_smoke.cjs": "0e7d9fe1e86f2a848f21e8df11c71ded8704fd12903c8822891ebbdf88adae04",
+    "install.py": "156febc30472e78c8a885348270174772dd9c9d4c7d63f60c74b7e74a29ba338",
+    "install_after_quit.py": "38dfd139e849f2451e4a3ed713991722e6630a72c310b35e76f8ab0490538b99",
+    "local_signing.py": "9fca284602e67740c1a38197c209cf7095b815e22a787e06ae880544727480d1",
+    "package.json": "525a39493acfc4b1f1228b3274309419d03c0dd26927b231e9cc8d29875d8f3e",
+    "patch.py": "cac97734aea894083d93b41a4fb4f17185e375b857dc2324a157b5ce195fa7cd",
+    "share_source.py": "f423002a17f4037b638bde7476a8502e53fb1136a1ccd94425ede34e302be945",
+    "smoke_startup.py": "3490c6d7d1ea017e3e241300defa3e67aac1a07560e8631aba6e25227733cdfd",
+    "src/files.cjs": "a2bb77fdecc969b71c0bd89227694c97b6cc388b6d5da7b353d46e2dcf347ddc",
+    "src/main.cjs": "b31aa20f08c3f9b34563a6e455a3d64b4d78a0bbbafbb4f8439a705ffcecb733",
+    "src/native.swift": "16ac03cc4a708e168e02e57e7c4a12dfd5e582d6e6774c96d911cfd1aea813db",
+    "src/preload.js": "233bfc26ac64431bb73ecba663f03f04192def67c6915ddd5bf15ffe8444b0b9",
+    "src/renderer.js": "759624da5f1337c50fe5c1b3dd95e0af65e6371aa24beb29459c0d8bcf4ebb95",
+    "tests/files.test.cjs": "afe5fe2c162e2c1ec78dadcb0c28213d07e8c16698bdc5213a1d3a124d00cb29",
+    "tests/ipc.test.cjs": "f2a7e7d83869418de509f9bd39bb9b382e2938d855df1cd83677179207f18a4a",
+    "tests/native.test.cjs": "a4b12b2d9338285ec81b2e9549403610fa9377fe7b6d8d92f96caadb3176d10a",
+    "tests/renderer.test.cjs": "9ec37a9d361819ca9da564e27ef4ed6e0a7b055c910aea6726862285aa3dbc85"
+  }
+}

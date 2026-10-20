@@ -1,0 +1,17 @@
+candidate*/
+backups/
+__pycache__/
+src/native-helper
+native-package/
+*.pkg
+/signing-preflight/
+/runtime-test-profile/
+/dist/
+/*.log
+/install-status.json
+/install-once.plist
+/install-once.lock
+/pending-receipt.txt
+/安装状态.txt
+/恢复原版.command
+.DS_Store
